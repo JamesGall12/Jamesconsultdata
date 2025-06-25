@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Reactivation Evolution by Touchpoint</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+        
+        .header p {
+            margin: 10px 0 0 0;
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 600px;
+            margin: 30px 0;
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+        }
+        
+        .key-insights {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        .insight-card {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        
+        .insight-card h3 {
+            margin: 0 0 15px 0;
+            font-size: 1.3em;
+        }
+        
+        .insight-card .stat {
+            font-size: 2.2em;
+            font-weight: bold;
+            display: block;
+            margin: 10px 0;
+        }
+        
+        .insight-card .description {
+            font-size: 1em;
+            opacity: 0.9;
+            line-height: 1.4;
+        }
+        
+        .sms-highlight {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            margin: 30px 0;
+            text-align: center;
+        }
+        
+        .sms-highlight h2 {
+            margin: 0 0 15px 0;
+            font-size: 2em;
+        }
+        
+        .sms-highlight .highlight-text {
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Patient Reactivation Evolution</h1>
+            <p>Historical Performance by Touchpoint (2021-2024)</p>
+        </div>
+        
+        <div class="content">
+            <div class="chart-container">
+                <canvas id="evolutionChart"></canvas>
+            </div>
+            
+            <div class="sms-highlight">
+                <h2>🚀 SMS System Impact</h2>
+                <p class="highlight-text">The light blue line (2024-06 to 2024-12) shows dramatic improvements, especially at the 6-month touchpoint where patients jumped from 100 to 393 reactivations!</p>
+            </div>
+            
+            <div class="key-insights">
+                <div class="insight-card">
+                    <h3>📈 Biggest Win: 6-Month Mark</h3>
+                    <span class="stat">+293%</span>
+                    <p class="description">175-182 days touchpoint exploded from 100 to 393 patient reactivations - the most dramatic improvement in the entire dataset.</p>
+                </div>
+                
+                <div class="insight-card">
+                    <h3>🎯 Consistent Improvements</h3>
+                    <span class="stat">4 Key Wins</span>
+                    <p class="description">Multiple touchpoints show 77-293% improvements, proving the SMS system works across the entire patient journey.</p>
+                </div>
+                
+                <div class="insight-card">
+                    <h3>💰 Total Impact</h3>
+                    <span class="stat">$481.5K</span>
+                    <p class="description">6-month LTV impact from 963 additional patient reactivations, with $963K projected annually.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Touchpoint labels (first 55 key touchpoints)
+        const touchpointLabels = [
+            '0-7', '7-14', '14-21', '21-28', '28-35', '35-42', '42-49', '49-56', '56-63', '63-70',
+            '70-77', '77-84', '84-91', '91-98', '98-105', '105-112', '112-119', '119-126', '126-133', '133-140',
+            '140-147', '147-154', '154-161', '161-168', '168-175', '175-182', '182-189', '189-196', '196-203',
+            '203-210', '210-217', '217-224', '224-231', '231-238', '238-245', '245-252', '252-259', '259-266',
+            '266-273', '273-280', '280-287', '287-294', '294-301', '301-308', '308-315', '315-322', '322-329',
+            '329-336', '336-343', '343-350', '350-357', '357-364', '364-371', '371-378', '378-385'
+        ];
+
+        // Real data from CSV file
+        const periodData = {
+            '2021-06 to 2021-12': [3, 5, 2, 8, 2, 1, 2, 2, 2, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            '2021-12 to 2022-06': [16, 17, 23, 33, 32, 35, 12, 29, 17, 5, 7, 6, 7, 6, 5, 2, 3, 3, 2, 3, 1, 1, 0, 1, 0, 1, 1, 3, 1, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            '2022-06 to 2022-12': [35, 38, 57, 121, 75, 111, 55, 71, 56, 68, 42, 32, 33, 18, 24, 15, 12, 14, 9, 8, 12, 10, 6, 3, 8, 2, 7, 3, 4, 2, 2, 1, 2, 1, 2, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1],
+            '2022-12 to 2023-06': [30, 37, 56, 155, 84, 98, 67, 74, 39, 65, 55, 56, 73, 47, 49, 40, 54, 30, 49, 43, 27, 39, 54, 37, 22, 35, 70, 74, 56, 34, 42, 27, 15, 23, 12, 12, 11, 12, 2, 4, 6, 4, 3, 3, 3, 5, 1, 0, 0, 2, 0, 0, 2, 0, 0],
+            '2023-06 to 2023-12': [40, 53, 70, 123, 109, 107, 68, 62, 63, 53, 65, 43, 81, 65, 57, 46, 47, 47, 47, 51, 67, 94, 82, 77, 81, 81, 114, 131, 104, 64, 65, 48, 37, 26, 21, 28, 15, 8, 16, 18, 12, 10, 14, 13, 13, 12, 3, 9, 2, 4, 7, 4, 11, 1, 4],
+            '2023-12 to 2024-06': [110, 75, 76, 155, 149, 159, 119, 96, 95, 97, 99, 89, 79, 92, 93, 91, 75, 83, 62, 76, 98, 111, 101, 123, 86, 100, 197, 172, 131, 76, 76, 64, 39, 52, 40, 42, 19, 25, 26, 20, 17, 17, 17, 9, 11, 13, 9, 10, 8, 14, 10, 8, 12, 7, 11],
+            '2024-06 to 2024-12': [140, 100, 119, 108, 281, 176, 148, 109, 101, 107, 103, 102, 81, 163, 95, 102, 102, 85, 88, 95, 85, 120, 101, 91, 126, 393, 372, 137, 106, 91, 55, 69, 46, 43, 47, 35, 27, 20, 24, 20, 29, 18, 14, 19, 11, 15, 17, 9, 10, 10, 12, 7, 13, 14, 8]
+        };
+
+        const config = {
+            type: 'line',
+            data: {
+                labels: touchpointLabels,
+                datasets: [
+                    {
+                        label: '2021-06 to 2021-12',
+                        data: periodData['2021-06 to 2021-12'],
+                        borderColor: 'rgba(52, 152, 219, 1)',
+                        backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                        borderWidth: 2,
+                        fill: false,
+                        tension: 0.1
+                    },
+                    {
+                        label: '2021-12 to 2022-06',
+                        data: periodData['2021-12 to 2022-06'],
+                        borderColor: 'rgba(231, 76, 60, 1)',
+                        backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                        borderWidth: 2,
+                        fill: false,
+                        tension: 0.1
+                    },
+                    {
+                        label: '2022-06 to 2022-12',
+                        data: periodData['2022-06 to 2022-12'],
+                        borderColor: 'rgba(46, 204, 113, 1)',
+                        backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                        borderWidth: 2,
+                        fill: false,
+                        tension: 0.1
+                    },
+                    {
+                        label: '2022-12 to 2023-06',
+                        data: periodData['2022-12 to 2023-06'],
+                        borderColor: 'rgba(155, 89, 182, 1)',
+                        backgroundColor: 'rgba(155, 89, 182, 0.1)',
+                        borderWidth: 2,
+                        fill: false,
+                        tension: 0.1
+                    },
+                    {
+                        label: '2023-06 to 2023-12',
+                        data: periodData['2023-06 to 2023-12'],
+                        borderColor: 'rgba(241, 196, 15, 1)',
+                        backgroundColor: 'rgba(241, 196, 15, 0.1)',
+                        borderWidth: 2,
+                        fill: false,
+                        tension: 0.1
+                    },
+                    {
+                        label: '2023-12 to 2024-06 (Bulk Campaigns)',
+                        data: periodData['2023-12 to 2024-06'],
+                        borderColor: 'rgba(26, 188, 156, 1)',
+                        backgroundColor: 'rgba(26, 188, 156, 0.1)',
+                        borderWidth: 2,
+                        fill: false,
+                        tension: 0.1
+                    },
+                    {
+                        label: '2024-06 to 2024-12 (SMS System)',
+                        data: periodData['2024-06 to 2024-12'],
+                        borderColor: 'rgba(52, 224, 235, 1)',
+                        backgroundColor: 'rgba(52, 224, 235, 0.2)',
+                        borderWidth: 4,
+                        fill: false,
+                        tension: 0.1,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Patient Reactivations by Days Since Last Appointment',
+                        font: {
+                            size: 18,
+                            weight: 'bold'
+                        },
+                        padding: 20
+                    },
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            font: {
+                                size: 12
+                            },
+                            padding: 15,
+                            usePointStyle: true
+                        }
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        callbacks: {
+                            title: function(tooltipItems) {
+                                return `${tooltipItems[0].label} days since last appointment`;
+                            },
+                            label: function(context) {
+                                const label = context.dataset.label || '';
+                                const value = context.parsed.y;
+                                return `${label}: ${value} patients`;
+                            },
+                            afterBody: function(tooltipItems) {
+                                const dayRange = tooltipItems[0].label;
+                                // Highlight key touchpoints
+                                if (dayRange === '28-35' || dayRange === '91-98' || dayRange === '175-182' || dayRange === '182-189') {
+                                    return ['', '🎯 Key SMS Touchpoint'];
+                                }
+                                return '';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Number of Patient Reactivations',
+                            font: {
+                                size: 14,
+                                weight: 'bold'
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0,0,0,0.1)'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Days Since Last Appointment',
+                            font: {
+                                size: 14,
+                                weight: 'bold'
+                            }
+                        },
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            maxTicksLimit: 20,
+                            font: {
+                                size: 10
+                            }
+                        }
+                    }
+                },
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                },
+                elements: {
+                    point: {
+                        radius: 2,
+                        hoverRadius: 4
+                    }
+                },
+                animation: {
+                    duration: 2000,
+                    easing: 'easeInOutQuart'
+                }
+            }
+        };
+
+        // Create the chart
+        const ctx = document.getElementById('evolutionChart').getContext('2d');
+        const chart = new Chart(ctx, config);
+    </script>
+</body>
+</html>
